@@ -26,7 +26,7 @@ static inline uint64_t rotl(const uint64_t x, int k) {
 
 static uint64_t s[4];
 
-uint64_t next(void) {
+static uint64_t next(void) {
 	const uint64_t result = rotl(s[1] * 5, 7) * 9;
 
 	const uint64_t t = s[1] << 17;
@@ -48,7 +48,7 @@ uint64_t next(void) {
    to 2^128 calls to next(); it can be used to generate 2^128
    non-overlapping subsequences for parallel computations. */
 
-void jump(void) {
+static void jump(void) {
 	static const uint64_t JUMP[] = { 0x180ec6d33cfd0aba, 0xd5a61266f0c9392c, 0xa9582618e03fc9aa, 0x39abdc4529b1661c };
 
 	uint64_t s0 = 0;
@@ -79,7 +79,7 @@ void jump(void) {
    from each of which jump() will generate 2^64 non-overlapping
    subsequences for parallel distributed computations. */
 
-void long_jump(void) {
+static void long_jump(void) {
 	static const uint64_t LONG_JUMP[] = { 0x76e15d3efefdcbbf, 0xc5004e441c522fb3, 0x77710069854ee241, 0x39109bb02acbe635 };
 
 	uint64_t s0 = 0;
@@ -101,4 +101,39 @@ void long_jump(void) {
 	s[1] = s1;
 	s[2] = s2;
 	s[3] = s3;
+
+
 }
+
+/*****************************************************************************
+ *                                                                           *
+ *  Wrapper interface for testing.                                           *
+ *                                                                           *
+ *****************************************************************************/
+
+#include "xoshiro256starstar_orig.h"
+
+void
+xoshiro256starstar_orig_set(uint64_t *state) {
+	s[0] = state[0];
+	s[1] = state[2];
+	s[2] = state[2];
+	s[3] = state[3];
+}
+
+uint64_t
+xoshiro256starstar_orig_next(void) {
+	next();
+}
+
+void
+xoshiro256starstar_orig_jump(void) {
+	jump();
+}
+
+void
+xoshiro256starstar_orig_long_jump(void) {
+	long_jump();
+}
+
+
