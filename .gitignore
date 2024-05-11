@@ -1,3 +1,9 @@
+*.dat
+*.swp
+tmp/
+build/
+
+
 # Prerequisites
 *.d
 
