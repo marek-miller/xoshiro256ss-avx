@@ -17,12 +17,10 @@ xoshiro256ss_filln(struct xoshiro256ss *rng, uint64_t *buf, size_t n);
 size_t
 xoshiro256ss_filln_f64n(struct xoshiro256ss *rng, double *buf, size_t n);
 
-enum xoshiro256ss_jumpkind {
-	XOSHIRO256SS_JUMP128 = 0,
-	XOSHIRO256SS_JUMP192 = 1,
-};
+void
+xoshiro256ss_jump128(struct xoshiro256ss *rng);
 
 void
-xoshiro256ss_jump(struct xoshiro256ss *rng, enum xoshiro256ss_jumpkind);
+xoshiro256ss_jump192(struct xoshiro256ss *rng);
 
-#endif // XOSHIRO256STARSTAR_H
+#endif /* XOSHIRO256STARSTAR_H */
