@@ -1,4 +1,4 @@
-# xoshiro256ss-avx
+# xoshiro256ss-avx2
 
 Vectorized implementation of _Xoshiro256**_ pseudo random number generator by David Blackman and Sebastiano Vigna [[1]].
 
