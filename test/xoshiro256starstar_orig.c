@@ -116,7 +116,7 @@ static void long_jump(void) {
 void
 xoshiro256starstar_orig_set(uint64_t *state) {
 	s[0] = state[0];
-	s[1] = state[2];
+	s[1] = state[1];
 	s[2] = state[2];
 	s[3] = state[3];
 }
