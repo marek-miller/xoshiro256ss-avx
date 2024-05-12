@@ -22,7 +22,7 @@ rotl64(const uint64_t x, int k)
 }
 
 static uint64_t
-x256ss_scalar_next(uint64_t *s)
+scalar_next(uint64_t *s)
 {
 	const uint64_t rt = rotl64(s[1] * 5, 7) * 9;
 
@@ -38,7 +38,7 @@ x256ss_scalar_next(uint64_t *s)
 }
 
 static void
-x256ss_scalar_jump128(uint64_t *s)
+scalar_jump128(uint64_t *s)
 {
 	static const uint64_t JUMP[4] = { 0x180ec6d33cfd0aba,
 		0xd5a61266f0c9392c, 0xa9582618e03fc9aa, 0x39abdc4529b1661c };
@@ -55,7 +55,7 @@ x256ss_scalar_jump128(uint64_t *s)
 				s2 ^= s[2];
 				s3 ^= s[3];
 			}
-			x256ss_scalar_next(s);
+			scalar_next(s);
 		}
 	s[0] = s0;
 	s[1] = s1;
@@ -74,27 +74,46 @@ xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed)
 	tmp[2] = splitmix64(&spl_tmp);
 	tmp[3] = splitmix64(&spl_tmp);
 	for (size_t _ = 0; _ < 128; _++)
-		x256ss_scalar_next(tmp);
+		scalar_next(tmp);
 
 	rng->s[0 * 4 + 0] = tmp[0];
 	rng->s[1 * 4 + 0] = tmp[1];
 	rng->s[2 * 4 + 0] = tmp[2];
 	rng->s[3 * 4 + 0] = tmp[3];
-	x256ss_scalar_jump128(tmp);
+	scalar_jump128(tmp);
 	rng->s[0 * 4 + 1] = tmp[0];
 	rng->s[1 * 4 + 1] = tmp[1];
 	rng->s[2 * 4 + 1] = tmp[2];
 	rng->s[3 * 4 + 1] = tmp[3];
-	x256ss_scalar_jump128(tmp);
+	scalar_jump128(tmp);
 	rng->s[0 * 4 + 2] = tmp[0];
 	rng->s[1 * 4 + 2] = tmp[1];
 	rng->s[2 * 4 + 2] = tmp[2];
 	rng->s[3 * 4 + 2] = tmp[3];
-	x256ss_scalar_jump128(tmp);
+	scalar_jump128(tmp);
 	rng->s[0 * 4 + 3] = tmp[0];
 	rng->s[1 * 4 + 3] = tmp[1];
 	rng->s[2 * 4 + 3] = tmp[2];
 	rng->s[3 * 4 + 3] = tmp[3];
 
 	return 0;
+}
+
+static void
+filln_unaligned(struct xoshiro256ss *rng, uint64_t *buf, size_t n)
+{
+	_Alignas(32) uint64_t buf_alg[4];
+	for (size_t b = 0; b < n / 4; b++) {
+		filln_aligned(rng, buf_alg, 4);
+		buf[b * 4 + 0] = buf_alg[0];
+		buf[b * 4 + 1] = buf_alg[1];
+		buf[b * 4 + 2] = buf_alg[2];
+		buf[b * 4 + 3] = buf_alg[3];
+	}
+
+	if (n % 4 > 0) {
+		filln_aligned(rng, buf_alg, 4);
+		for (size_t i = 0; i < n % 4; i++)
+			buf[(n / 4) * 4 + i] = buf_alg[i];
+	}
 }
