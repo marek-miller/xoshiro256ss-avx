@@ -35,13 +35,13 @@ static uint64_t x256ss_scalar_next(uint64_t *s) {
 
 
 static void x256ss_scalar_jump128(uint64_t *s) {
-	static const uint64_t JUMP[] = { 0x180ec6d33cfd0aba, 0xd5a61266f0c9392c, 0xa9582618e03fc9aa, 0x39abdc4529b1661c };
+	static const uint64_t JUMP[4] = { 0x180ec6d33cfd0aba, 0xd5a61266f0c9392c, 0xa9582618e03fc9aa, 0x39abdc4529b1661c };
 
 	uint64_t s0 = 0;
 	uint64_t s1 = 0;
 	uint64_t s2 = 0;
 	uint64_t s3 = 0;
-	for(size_t i = 0; i < sizeof JUMP / sizeof *JUMP; i++)
+	for(size_t i = 0; i < 4; i++)
 		for(size_t b = 0; b < 64; b++) {
 			if (JUMP[i] & UINT64_C(1) << b) {
 				s0 ^= s[0];
@@ -68,7 +68,7 @@ xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed) {
 	tmp[1] = splitmix64(&spl_tmp); 
 	tmp[2] = splitmix64(&spl_tmp); 
 	tmp[3] = splitmix64(&spl_tmp); 
-	for (size_t _ = 0; _  < 16; _++)
+	for (size_t _ = 0; _  < 128; _++)
 		x256ss_scalar_next(tmp);
 	
 	rng->s[0*4 + 0]	= tmp[0];

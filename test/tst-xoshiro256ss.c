@@ -27,7 +27,7 @@ splitmix64(uint64_t *state)
  * Verify if the intialization is performed expliticly like this:
  *
  * 1. Split the seed with splitmix64
- * 2  Perform 16 rounds of Xoshiro to escape the zeroland
+ * 2  Perform 128 rounds of Xoshiro to escape the zeroland
  * 2. Jump 4 times, to split the state into 4 paralel PRNGs (as colums)
  *
  */
@@ -43,7 +43,7 @@ test_init(void)
 	exp_st[2] = splitmix64(&splmix_st);
 	exp_st[3] = splitmix64(&splmix_st);
 	xoshiro256starstar_orig_set(exp_st);
-	for (size_t i = 0; i < 16; i++)
+	for (size_t i = 0; i < 128; i++)
 		xoshiro256starstar_orig_next();
 	xoshiro256starstar_orig_get(exp_st);
 	xoshiro256starstar_orig_jump();
@@ -77,6 +77,23 @@ test_init(void)
 	}
 }
 
+void
+test_zeroinit(void) 
+{
+	struct xoshiro256ss rng;
+	if (xoshiro256ss_init(&rng, UINT64_C(0x00)) < 0) {
+		TEST_FAIL("PRNG init");
+		return;
+	}
+
+	for (size_t i = 0; i < 16; i++) {
+		if (rng.s[i] == 0) {
+			TEST_FAIL("state contains 0x00 at %zu", i);
+		}
+	}
+
+}
+
 int
 main(int argc, char **argv)
 {
@@ -84,6 +101,7 @@ main(int argc, char **argv)
 	(void)argv;
 
 	test_init();
+	test_zeroinit();
 
 	return TEST_RT;
 }
