@@ -16,7 +16,7 @@ all: build
 
 build: $(PROGRAM)
 
-$(PROGRAM): $(OBJS)
+$(PROGRAM): $(OBJS) $(STALIB)
 	$(CC) -o $@ $^ $(STALIB) $(LDLIBS) $(LDFLAGS)
 
 %.c.o: %.c

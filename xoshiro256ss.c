@@ -43,10 +43,7 @@ scalar_jump128(uint64_t *s)
 	static const uint64_t JUMP[4] = { 0x180ec6d33cfd0aba,
 		0xd5a61266f0c9392c, 0xa9582618e03fc9aa, 0x39abdc4529b1661c };
 
-	uint64_t s0 = 0;
-	uint64_t s1 = 0;
-	uint64_t s2 = 0;
-	uint64_t s3 = 0;
+	uint64_t s0 = 0, s1 = 0, s2 = 0, s3 = 0;
 	for (size_t i = 0; i < 4; i++)
 		for (size_t b = 0; b < 64; b++) {
 			if (JUMP[i] & UINT64_C(1) << b) {
@@ -66,13 +63,13 @@ scalar_jump128(uint64_t *s)
 int
 xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed)
 {
+	uint64_t smx = seed;
 	uint64_t tmp[4];
-	uint64_t spl_tmp = seed;
 
-	tmp[0] = splitmix64(&spl_tmp);
-	tmp[1] = splitmix64(&spl_tmp);
-	tmp[2] = splitmix64(&spl_tmp);
-	tmp[3] = splitmix64(&spl_tmp);
+	tmp[0] = splitmix64(&smx);
+	tmp[1] = splitmix64(&smx);
+	tmp[2] = splitmix64(&smx);
+	tmp[3] = splitmix64(&smx);
 	for (size_t _ = 0; _ < 128; _++)
 		scalar_next(tmp);
 
@@ -99,21 +96,57 @@ xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed)
 	return 0;
 }
 
-static void
+/*
+ * This furncion assumes two things:
+ *  1. that the buffer pointed to by buf is aligned to 32 bytes,
+ *  2. that the length of the buffer is divisible by 4, i.e.
+ *     the buffer contains a multiple of 32 bytes.
+ * The function can take a buffer of length 0, i.e. when n=0,
+ * as long as buf points to valid memory.
+ */
+extern size_t
+filln_aligned(struct xoshiro256ss *rng, uint64_t *buf, size_t n);
+
+static size_t
 filln_unaligned(struct xoshiro256ss *rng, uint64_t *buf, size_t n)
 {
-	_Alignas(32) uint64_t buf_alg[4];
+	size_t rt = 0;
+
+	_Alignas(0x20) uint64_t buf_alg[4];
 	for (size_t b = 0; b < n / 4; b++) {
-		filln_aligned(rng, buf_alg, 4);
+		rt += filln_aligned(rng, buf_alg, 4);
 		buf[b * 4 + 0] = buf_alg[0];
 		buf[b * 4 + 1] = buf_alg[1];
 		buf[b * 4 + 2] = buf_alg[2];
 		buf[b * 4 + 3] = buf_alg[3];
 	}
-
 	if (n % 4 > 0) {
-		filln_aligned(rng, buf_alg, 4);
+		rt += filln_aligned(rng, buf_alg, 4);
 		for (size_t i = 0; i < n % 4; i++)
 			buf[(n / 4) * 4 + i] = buf_alg[i];
 	}
+
+	return rt;
+}
+
+size_t
+xoshiro256ss_filln(struct xoshiro256ss *rng, uint64_t *buf, size_t n)
+{
+	size_t rt = 0;
+	/* buf points to uint64_t, which is always aligned to 8 bytes */
+	size_t algmt64 = ((uintptr_t)buf & 0x1f) / 8;
+	size_t offst   = (4 - algmt64) % 4;
+	if (algmt64 > 0) {
+		rt += filln_unaligned(rng, buf, offst > n ? offst : n);
+		if (offst > n)
+			return rt;
+	}
+
+	size_t blk_alg = (n - offst) / 4 * 4;
+	rt += filln_aligned(rng, buf + offst, blk_alg);
+	if (n > offst + blk_alg)
+		rt += filln_unaligned(
+			rng, buf + offst + blk_alg, n - offst - blk_alg);
+
+	return rt;
 }
