@@ -55,10 +55,10 @@ test_init(void)
 	/* traspose the matix */
 	for (size_t i = 0; i < 4; i++) {
 		for (size_t j = 0; j < i; j++) {
-			uint64_t x = exp_st[i*4 + j];
-			uint64_t y = exp_st[j*4 + i];
-			exp_st[i*4 + j] = y;
-			exp_st[j*4 + i] = x;
+			uint64_t x	  = exp_st[i * 4 + j];
+			uint64_t y	  = exp_st[j * 4 + i];
+			exp_st[i * 4 + j] = y;
+			exp_st[j * 4 + i] = x;
 		}
 	}
 
@@ -78,7 +78,7 @@ test_init(void)
 }
 
 void
-test_zeroinit(void) 
+test_zeroinit(void)
 {
 	struct xoshiro256ss rng;
 	if (xoshiro256ss_init(&rng, UINT64_C(0x00)) < 0) {
@@ -91,7 +91,6 @@ test_zeroinit(void)
 			TEST_FAIL("state contains 0x00 at %zu", i);
 		}
 	}
-
 }
 
 int
