@@ -6,12 +6,11 @@ OBJS		= $(SRCS:%=%.o)
 DEPS		= $(SRCS:%=%.d)
 INC		= ..
 
-.PHONY: all build debug
+.PHONY: all build 
 .DEFAULT_GOAL: all
 
-debug: CFLAGS	+= -DDEBUG -g -Og -Wpedantic
-debug: ASMFLAGS	+= -DDEBUG -g -Fdwarf
-debug: all
+CFLAGS		+= -DDEBUG -DTEST -g -Og -Wpedantic
+ASMFLAGS	+= -DDEBUG -DTEST -g -Fdwarf
 
 all: build
 

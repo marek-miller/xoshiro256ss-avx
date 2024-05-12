@@ -121,9 +121,17 @@ xoshiro256starstar_orig_set(uint64_t *state) {
 	s[3] = state[3];
 }
 
+void
+xoshiro256starstar_orig_get(uint64_t *state) {
+	state[0] = s[0];
+	state[1] = s[1];
+	state[2] = s[2];
+	state[3] = s[3];
+}
+
 uint64_t
 xoshiro256starstar_orig_next(void) {
-	next();
+	return next();
 }
 
 void

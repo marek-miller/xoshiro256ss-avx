@@ -26,6 +26,12 @@
 void
 xoshiro256starstar_orig_set(uint64_t *state);
 
+/*
+ * Read out the global state. Write in to the 4 element array specified.
+ */
+void
+xoshiro256starstar_orig_get(uint64_t *state);
+
 uint64_t
 xoshiro256starstar_orig_next(void);
 
