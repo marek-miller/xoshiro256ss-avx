@@ -75,10 +75,7 @@ test_init(void)
 	}
 
 	struct xoshiro256ss rng;
-	if (xoshiro256ss_init(&rng, seed) < 0) {
-		TEST_FAIL("PRNG init");
-		return;
-	}
+	xoshiro256ss_init(&rng, seed);
 
 	/* Verify */
 	for (size_t i = 0; i < 16; i++) {
@@ -93,10 +90,7 @@ void
 test_zeroinit(void)
 {
 	struct xoshiro256ss rng;
-	if (xoshiro256ss_init(&rng, UINT64_C(0x00)) < 0) {
-		TEST_FAIL("PRNG init");
-		return;
-	}
+	xoshiro256ss_init(&rng, UINT64_C(0x00));
 	for (size_t i = 0; i < 16; i++) {
 		if (rng.s[i] == 0)
 			TEST_FAIL("state contains 0x00 at %zu", i);
@@ -109,9 +103,7 @@ test_filln_aligned_01(void)
 	uint64_t seed = UINT64_C(0x834333c);
 
 #define SIZE (32)
-	uint64_t		expct[4][SIZE];
-	_Alignas(0x20) uint64_t buf[4 * SIZE];
-
+	uint64_t expct[4][SIZE];
 	for (size_t b = 0; b < 4; b++) {
 		seed_global_test_rng(seed);
 		for (size_t _ = 0; _ < b; _++)
@@ -120,13 +112,14 @@ test_filln_aligned_01(void)
 			expct[b][i] = xoshiro256starstar_orig_next();
 	}
 
-	struct xoshiro256ss rng;
+	struct xoshiro256ss_smpl buf[SIZE];
+	struct xoshiro256ss	 rng;
 	xoshiro256ss_init(&rng, seed);
-	xoshiro256ss_filln(&rng, buf, SIZE * 4);
+	xoshiro256ss_filln(&rng, buf, SIZE);
 
 	for (size_t b = 0; b < 4; b++) {
 		for (size_t i = 0; i < SIZE; i++) {
-			if (buf[b + 4 * i] != expct[b][i]) {
+			if (buf[i].s[b] != expct[b][i]) {
 				TEST_FAIL(
 					"result differs at block %zu, index %zu",
 					b, i);
@@ -134,6 +127,7 @@ test_filln_aligned_01(void)
 			}
 		}
 	}
+#undef SIZE
 }
 
 int

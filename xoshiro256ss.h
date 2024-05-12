@@ -8,19 +8,24 @@ struct xoshiro256ss {
 	_Alignas(32) uint64_t s[16];
 };
 
-int
+struct xoshiro256ss_smpl {
+	_Alignas(32) uint64_t s[4];
+};
+
+void
 xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed);
 
 size_t
-xoshiro256ss_filln(struct xoshiro256ss *rng, uint64_t *buf, size_t n);
-
-size_t
-xoshiro256ss_filln_f64n(struct xoshiro256ss *rng, double *buf, size_t n);
+xoshiro256ss_filln(
+	struct xoshiro256ss *rng, struct xoshiro256ss_smpl *buf, size_t n);
 
 void
 xoshiro256ss_jump128(struct xoshiro256ss *rng);
 
 void
 xoshiro256ss_jump192(struct xoshiro256ss *rng);
+
+double
+u64_to_f64n(uint64_t x);
 
 #endif /* XOSHIRO256STARSTAR_H */

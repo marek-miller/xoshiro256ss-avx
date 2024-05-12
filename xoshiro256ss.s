@@ -4,10 +4,9 @@ default rel
 section .data
 
 section .text
-	global filln_aligned
+	global xoshiro256ss_filln
 
-filln_aligned:
-	shr	rdx, 2
+xoshiro256ss_filln:
 	mov	rax, rdx
 	test	rdx, rdx
 	jz	.rt
