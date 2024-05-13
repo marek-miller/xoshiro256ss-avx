@@ -3,12 +3,12 @@
 
 #include "xoshiro256ss.h"
 
-static uint64_t
-splitmix64(uint64_t *state)
+uint64_t
+xoshiro256ss_splitmix64(uint64_t *st)
 {
 	uint64_t rt;
 
-	rt = (*state += UINT64_C(0x9E3779B97f4A7C15));
+	rt = (*st += UINT64_C(0x9E3779B97f4A7C15));
 	rt = (rt ^ (rt >> 30)) * UINT64_C(0xBF58476D1CE4E5B9);
 	rt = (rt ^ (rt >> 27)) * UINT64_C(0x94D049BB133111EB);
 
@@ -67,7 +67,7 @@ xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed)
 	uint64_t st[4];
 
 	for (size_t j = 0; j < 4; j++)
-		st[j] = splitmix64(&smx);
+		st[j] = xoshiro256ss_splitmix64(&smx);
 	for (size_t i = 0; i < XOSHIRO256SS_WIDTH; i++) {
 		scalar_jump128(st);
 		for (size_t j = 0; j < 4; j++)
@@ -77,37 +77,32 @@ xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed)
 	return 1;
 }
 
-#if XOSHIRO256SS_TECH == 1
 extern size_t
-xoshiro256ss_filln_avx2(
-	struct xoshiro256ss *rng, struct xoshiro256ss_smpl *buf, size_t n);
+xoshiro256ss_filln_avx2(struct xoshiro256ss *rng, uint64_t *buf, size_t n);
+
+extern size_t
+xoshiro256ss_filln_avx512(struct xoshiro256ss *rng, uint64_t *buf, size_t n);
 
 size_t
-xoshiro256ss_filln(
-	struct xoshiro256ss *rng, struct xoshiro256ss_smpl *buf, size_t n)
+xoshiro256ss_filln(struct xoshiro256ss *rng, uint64_t *buf, size_t n)
 {
+#if XOSHIRO256SS_TECH == 1
+
 	return xoshiro256ss_filln_avx2(rng, buf, n);
-}
 
 #elif XOSHIRO256SS_TECH == 2
-size_t
-xoshiro256ss_filln_avx512(
-	struct xoshiro256ss *rng, struct xoshiro256ss_smpl *buf, size_t n){
-#error "Not implemented"
-}
 
-size_t xoshiro256ss_filln(
-	struct xoshiro256ss *rng, struct xoshiro256ss_smpl *buf, size_t n)
-{
 	return xoshiro256ss_filln_avx512(rng, buf, n);
-}
 
 #else
+
 #error "Wrong technology specifier"
+
 #endif
+}
 
 double
-u64_to_f64n(uint64_t x)
+xoshiro256ss_u64_to_f64n(uint64_t x)
 {
 	return (x >> 11) * 0x1.0p-53;
 }
