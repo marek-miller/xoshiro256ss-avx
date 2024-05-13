@@ -7,11 +7,11 @@
 #define XOSHIRO256SS_WIDTH (8)
 
 struct xoshiro256ss {
-	_Alignas(32) uint64_t s[4 * XOSHIRO256SS_WIDTH];
+	_Alignas(64) uint64_t s[4 * XOSHIRO256SS_WIDTH];
 };
 
 struct xoshiro256ss_smpl {
-	_Alignas(32) uint64_t s[XOSHIRO256SS_WIDTH];
+	_Alignas(64) uint64_t s[XOSHIRO256SS_WIDTH];
 };
 
 /* Returns:

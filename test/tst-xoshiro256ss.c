@@ -87,7 +87,7 @@ test_filln_aligned(void)
 {
 	uint64_t seed = UINT64_C(0x834333c);
 
-#define SIZE (32)
+#define SIZE (64)
 	uint64_t expct[XOSHIRO256SS_WIDTH][SIZE];
 	for (size_t b = 0; b < XOSHIRO256SS_WIDTH; b++) {
 		seed_global_test_rng(seed);
@@ -113,7 +113,6 @@ test_filln_aligned(void)
 		}
 	}
 #undef SIZE
-
 }
 
 int
@@ -125,7 +124,7 @@ main(int argc, char **argv)
 	test_init();
 	test_zeroinit();
 	test_filln_aligned();
-	
+
 	if (TEST_RT == 0)
 		printf("OK\n");
 
