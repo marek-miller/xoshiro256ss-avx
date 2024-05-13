@@ -22,6 +22,8 @@ debug: CFLAGS	+= -DDEBUG -g -Og -Wpedantic
 debug: ASMFLAGS	+= -DDEBUG -g -Fdwarf
 debug: build
 
+-include $(DEPS)
+
 all: build
 
 build: $(STALIB) $(DYNLIB)
@@ -45,6 +47,12 @@ clean: test-clean
 
 dist-clean: clean
 	$(RM) $(STALIB) $(DYNLIB)
+
+
+.PHONY: format
+format:
+	find . -iname "*.h" -or -iname "*.c" -exec \
+		clang-format -i -style=file {} +
 
 
 TEST		= test

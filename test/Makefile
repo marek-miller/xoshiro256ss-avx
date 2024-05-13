@@ -12,6 +12,8 @@ INC		= ..
 CFLAGS		+= -DDEBUG -DTEST -g -Og -Wpedantic
 ASMFLAGS	+= -DDEBUG -DTEST -g -Fdwarf
 
+-include $(DEPS)
+
 all: build
 
 build: $(PROGRAM)
