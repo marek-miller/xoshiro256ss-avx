@@ -77,6 +77,7 @@ xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed)
 	return 1;
 }
 
+#if XOSHIRO256SS_TECH == 1
 extern size_t
 xoshiro256ss_filln_avx2(
 	struct xoshiro256ss *rng, struct xoshiro256ss_smpl *buf, size_t n);
@@ -87,6 +88,23 @@ xoshiro256ss_filln(
 {
 	return xoshiro256ss_filln_avx2(rng, buf, n);
 }
+
+#elif XOSHIRO256SS_TECH == 2
+size_t
+xoshiro256ss_filln_avx512(
+	struct xoshiro256ss *rng, struct xoshiro256ss_smpl *buf, size_t n){
+#error "Not implemented"
+}
+
+size_t xoshiro256ss_filln(
+	struct xoshiro256ss *rng, struct xoshiro256ss_smpl *buf, size_t n)
+{
+	return xoshiro256ss_filln_avx512(rng, buf, n);
+}
+
+#else
+#error "Wrong technology specifier"
+#endif
 
 double
 u64_to_f64n(uint64_t x)

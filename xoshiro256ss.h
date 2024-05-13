@@ -4,6 +4,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* 
+ * Specify AVX technology.  
+ * 	1 - AVX2
+ * 	2 - AVX512
+ */
+#ifndef XOSHIRO256SS_TECH
+#define XOSHIRO256SS_TECH 1 
+#endif
+
 #define XOSHIRO256SS_WIDTH (8)
 
 struct xoshiro256ss {
@@ -35,4 +44,4 @@ xoshiro256ss_jump192(struct xoshiro256ss *rng);
 double
 u64_to_f64n(uint64_t x);
 
-#endif /* XOSHIRO256STARSTAR_H */
+#endif /* XOSHIRO256SS_H */
