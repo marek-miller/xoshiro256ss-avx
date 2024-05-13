@@ -64,34 +64,17 @@ void
 xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed)
 {
 	uint64_t smx = seed;
-	uint64_t tmp[4];
+	uint64_t st[4];
 
-	tmp[0] = splitmix64(&smx);
-	tmp[1] = splitmix64(&smx);
-	tmp[2] = splitmix64(&smx);
-	tmp[3] = splitmix64(&smx);
+	for (size_t i = 0; i < 4; i++)
+		st[i] = splitmix64(&smx);
 	for (size_t _ = 0; _ < 128; _++)
-		scalar_next(tmp);
-
-	rng->s[0 * 4 + 0] = tmp[0];
-	rng->s[1 * 4 + 0] = tmp[1];
-	rng->s[2 * 4 + 0] = tmp[2];
-	rng->s[3 * 4 + 0] = tmp[3];
-	scalar_jump128(tmp);
-	rng->s[0 * 4 + 1] = tmp[0];
-	rng->s[1 * 4 + 1] = tmp[1];
-	rng->s[2 * 4 + 1] = tmp[2];
-	rng->s[3 * 4 + 1] = tmp[3];
-	scalar_jump128(tmp);
-	rng->s[0 * 4 + 2] = tmp[0];
-	rng->s[1 * 4 + 2] = tmp[1];
-	rng->s[2 * 4 + 2] = tmp[2];
-	rng->s[3 * 4 + 2] = tmp[3];
-	scalar_jump128(tmp);
-	rng->s[0 * 4 + 3] = tmp[0];
-	rng->s[1 * 4 + 3] = tmp[1];
-	rng->s[2 * 4 + 3] = tmp[2];
-	rng->s[3 * 4 + 3] = tmp[3];
+		scalar_next(st);
+	for (size_t i = 0; i < 4; i++) {
+		for (size_t j = 0; j < 4; j++) 
+			rng->s[i + 4 * j] = st[j];
+		scalar_jump128(st);
+	}	
 }
 
 double
