@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define XOSHIRO256SS_WIDTH (4)
+#define XOSHIRO256SS_WIDTH (8)
 
 struct xoshiro256ss {
 	_Alignas(32) uint64_t s[4 * XOSHIRO256SS_WIDTH];

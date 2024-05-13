@@ -12,38 +12,67 @@ xoshiro256ss_filln_avx2:
 	jz	.rt
 
 	vmovdqa ymm0, [rdi]
-	vmovdqa ymm1, 32[rdi]
-	vmovdqa ymm2, 64[rdi]
-	vmovdqa ymm3, 96[rdi]
+	vmovdqa ymm1, 64[rdi]
+	vmovdqa ymm2, 128[rdi]
+	vmovdqa ymm3, 192[rdi]
+	
+	vmovdqa ymm4, 32[rdi]
+	vmovdqa ymm5, 96[rdi]
+	vmovdqa ymm6, 160[rdi]
+	vmovdqa ymm7, 224[rdi]
 
 .l1:	; compute the result
-	vpsllq	ymm4, ymm1, 2
-	vpaddq	ymm4, ymm1
-	vpsrlq	ymm5, ymm4, 57
-	vpsllq	ymm4, 7
-	vpor	ymm4, ymm5
-	vpsllq	ymm5, ymm4, 3
-	vpaddq	ymm4, ymm5
-	vmovdqa [rsi], ymm4
+	vpsllq	ymm8, ymm1, 2
+	vpaddq	ymm8, ymm1
+	vpsrlq	ymm9, ymm8, 57
+	vpsllq	ymm8, 7
+	vpor	ymm8, ymm9
+	vpsllq	ymm9, ymm8, 3
+	vpaddq	ymm8, ymm9
+	vmovdqa [rsi], ymm8
 	; update the state
-	vpsllq	ymm4, ymm1, 17
+	vpsllq	ymm8, ymm1, 17
 	vpxor	ymm2, ymm0
 	vpxor	ymm3, ymm1
 	vpxor	ymm1, ymm2
 	vpxor	ymm0, ymm3
-	vpxor	ymm2, ymm4
-	vpsrlq	ymm4, ymm3, 19
+	vpxor	ymm2, ymm8
+	vpsrlq	ymm8, ymm3, 19
 	vpsllq	ymm3, 45
-	vpor	ymm3, ymm4
+	vpor	ymm3, ymm8
+
+	vpsllq	ymm8, ymm5, 2
+	vpaddq	ymm8, ymm5
+	vpsrlq	ymm9, ymm8, 57
+	vpsllq	ymm8, 7
+	vpor	ymm8, ymm9
+	vpsllq	ymm9, ymm8, 3
+	vpaddq	ymm8, ymm9
+	vmovdqa [rsi + 0x20], ymm8
+	; update the state
+	vpsllq	ymm8, ymm5, 17
+	vpxor	ymm6, ymm4
+	vpxor	ymm7, ymm5
+	vpxor	ymm5, ymm6
+	vpxor	ymm4, ymm7
+	vpxor	ymm6, ymm8
+	vpsrlq	ymm8, ymm7, 19
+	vpsllq	ymm7, 45
+	vpor	ymm7, ymm8
 	; rinse and repeat
-	add	rsi, 0x20	
+	add	rsi, 0x40	
 	dec	rdx
 	jnz	.l1
 
 	vmovdqa [rdi], ymm0
-	vmovdqa 32[rdi], ymm1
-	vmovdqa 64[rdi], ymm2
-	vmovdqa 96[rdi], ymm3
+	vmovdqa 64[rdi], ymm1
+	vmovdqa 128[rdi], ymm2
+	vmovdqa 192[rdi], ymm3
+	
+	vmovdqa 32[rdi], ymm4
+	vmovdqa 96[rdi], ymm5
+	vmovdqa 160[rdi], ymm6
+	vmovdqa 224[rdi], ymm7
 	vzeroupper
 .rt:	ret
 

@@ -64,14 +64,14 @@ int
 xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed)
 {
 	uint64_t smx = seed;
-	uint64_t st[XOSHIRO256SS_WIDTH];
+	uint64_t st[4];
 
-	for (size_t i = 0; i < XOSHIRO256SS_WIDTH; i++)
-		st[i] = splitmix64(&smx);
+	for (size_t j = 0; j < 4; j++)
+		st[j] = splitmix64(&smx);
 	for (size_t i = 0; i < XOSHIRO256SS_WIDTH; i++) {
 		scalar_jump128(st);
 		for (size_t j = 0; j < 4; j++)
-			rng->s[i + 4 * j] = st[j];
+			rng->s[i + XOSHIRO256SS_WIDTH * j] = st[j];
 	}
 
 	return 1;

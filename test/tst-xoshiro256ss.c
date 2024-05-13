@@ -49,31 +49,24 @@ void
 test_init(void)
 {
 	const uint64_t seed = UINT64_C(0x100e881);
-	uint64_t       exp_st[XOSHIRO256SS_WIDTH * 4];
+	uint64_t       exp_st[XOSHIRO256SS_WIDTH][4];
 
 	seed_global_test_rng(seed);
 	for (size_t i = 0; i < XOSHIRO256SS_WIDTH; i++) {
 		xoshiro256starstar_orig_jump();
-		xoshiro256starstar_orig_get(exp_st + 4 * i);
-	}
-	/* traspose the matix */
-	for (size_t i = 0; i < XOSHIRO256SS_WIDTH; i++) {
-		for (size_t j = 0; j < i; j++) {
-			uint64_t x	  = exp_st[i * 4 + j];
-			uint64_t y	  = exp_st[j * 4 + i];
-			exp_st[i * 4 + j] = y;
-			exp_st[j * 4 + i] = x;
-		}
+		xoshiro256starstar_orig_get(exp_st[i]);
 	}
 
 	struct xoshiro256ss rng;
 	xoshiro256ss_init(&rng, seed);
 
 	/* Verify */
-	for (size_t i = 0; i < XOSHIRO256SS_WIDTH * 4; i++) {
-		if (exp_st[i] != rng.s[i]) {
-			TEST_FAIL("PRGN init, wrong state at %zu", i);
-			break;
+	for (size_t i = 0; i < XOSHIRO256SS_WIDTH; i++) {
+		for (size_t j = 0; j < 4; j++) {
+			if (exp_st[i][j] != rng.s[XOSHIRO256SS_WIDTH * j + i]) {
+				TEST_FAIL("PRGN init, wrong state at %zu", i);
+				break;
+			}
 		}
 	}
 }
@@ -90,7 +83,7 @@ test_zeroinit(void)
 }
 
 void
-test_filln_aligned_01(void)
+test_filln_aligned(void)
 {
 	uint64_t seed = UINT64_C(0x834333c);
 
@@ -120,6 +113,7 @@ test_filln_aligned_01(void)
 		}
 	}
 #undef SIZE
+
 }
 
 int
@@ -130,8 +124,8 @@ main(int argc, char **argv)
 
 	test_init();
 	test_zeroinit();
-	test_filln_aligned_01();
-
+	test_filln_aligned();
+	
 	if (TEST_RT == 0)
 		printf("OK\n");
 
