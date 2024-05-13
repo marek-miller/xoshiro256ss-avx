@@ -60,19 +60,32 @@ scalar_jump128(uint64_t *s)
 	s[3] = s3;
 }
 
-void
+int
 xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed)
 {
 	uint64_t smx = seed;
-	uint64_t st[4];
+	uint64_t st[XOSHIRO256SS_WIDTH];
 
-	for (size_t i = 0; i < 4; i++)
+	for (size_t i = 0; i < XOSHIRO256SS_WIDTH; i++)
 		st[i] = splitmix64(&smx);
-	for (size_t i = 0; i < 4; i++) {
+	for (size_t i = 0; i < XOSHIRO256SS_WIDTH; i++) {
 		scalar_jump128(st);
 		for (size_t j = 0; j < 4; j++)
 			rng->s[i + 4 * j] = st[j];
 	}
+
+	return 1;
+}
+
+extern size_t
+xoshiro256ss_filln_avx2(
+	struct xoshiro256ss *rng, struct xoshiro256ss_smpl *buf, size_t n);
+
+size_t
+xoshiro256ss_filln(
+	struct xoshiro256ss *rng, struct xoshiro256ss_smpl *buf, size_t n)
+{
+	return xoshiro256ss_filln_avx2(rng, buf, n);
 }
 
 double

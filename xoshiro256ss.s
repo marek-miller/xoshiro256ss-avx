@@ -4,9 +4,9 @@ default rel
 section .data
 
 section .text
-	global xoshiro256ss_filln
+	global xoshiro256ss_filln_avx2
 
-xoshiro256ss_filln:
+xoshiro256ss_filln_avx2:
 	mov	rax, rdx
 	test	rdx, rdx
 	jz	.rt

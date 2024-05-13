@@ -4,15 +4,22 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define XOSHIRO256SS_WIDTH (4)
+
 struct xoshiro256ss {
-	_Alignas(32) uint64_t s[16];
+	_Alignas(32) uint64_t s[4 * XOSHIRO256SS_WIDTH];
 };
 
 struct xoshiro256ss_smpl {
-	_Alignas(32) uint64_t s[4];
+	_Alignas(32) uint64_t s[XOSHIRO256SS_WIDTH];
 };
 
-void
+/* Returns:
+ *  1 - AVX2
+ *  2 - AVX512
+ * -1 - error
+ */
+int
 xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed);
 
 size_t

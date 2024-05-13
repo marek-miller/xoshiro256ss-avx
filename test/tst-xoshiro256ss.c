@@ -32,7 +32,6 @@ splitmix64(uint64_t *state)
  * 2. Jump 4 times, to split the state into 4 paralel PRNGs (as colums)
  *
  */
-
 static void
 seed_global_test_rng(uint64_t seed)
 {
@@ -50,20 +49,15 @@ void
 test_init(void)
 {
 	const uint64_t seed = UINT64_C(0x100e881);
-	uint64_t       exp_st[16];
+	uint64_t       exp_st[XOSHIRO256SS_WIDTH * 4];
 
 	seed_global_test_rng(seed);
-
-	xoshiro256starstar_orig_jump();
-	xoshiro256starstar_orig_get(exp_st);
-	xoshiro256starstar_orig_jump();
-	xoshiro256starstar_orig_get(exp_st + 4);
-	xoshiro256starstar_orig_jump();
-	xoshiro256starstar_orig_get(exp_st + 8);
-	xoshiro256starstar_orig_jump();
-	xoshiro256starstar_orig_get(exp_st + 12);
+	for (size_t i = 0; i < XOSHIRO256SS_WIDTH; i++) {
+		xoshiro256starstar_orig_jump();
+		xoshiro256starstar_orig_get(exp_st + 4 * i);
+	}
 	/* traspose the matix */
-	for (size_t i = 0; i < 4; i++) {
+	for (size_t i = 0; i < XOSHIRO256SS_WIDTH; i++) {
 		for (size_t j = 0; j < i; j++) {
 			uint64_t x	  = exp_st[i * 4 + j];
 			uint64_t y	  = exp_st[j * 4 + i];
@@ -76,7 +70,7 @@ test_init(void)
 	xoshiro256ss_init(&rng, seed);
 
 	/* Verify */
-	for (size_t i = 0; i < 16; i++) {
+	for (size_t i = 0; i < XOSHIRO256SS_WIDTH * 4; i++) {
 		if (exp_st[i] != rng.s[i]) {
 			TEST_FAIL("PRGN init, wrong state at %zu", i);
 			break;
@@ -89,7 +83,7 @@ test_zeroinit(void)
 {
 	struct xoshiro256ss rng;
 	xoshiro256ss_init(&rng, UINT64_C(0x00));
-	for (size_t i = 0; i < 16; i++) {
+	for (size_t i = 0; i < XOSHIRO256SS_WIDTH * 4; i++) {
 		if (rng.s[i] == 0)
 			TEST_FAIL("state contains 0x00 at %zu", i);
 	}
@@ -101,8 +95,8 @@ test_filln_aligned_01(void)
 	uint64_t seed = UINT64_C(0x834333c);
 
 #define SIZE (32)
-	uint64_t expct[4][SIZE];
-	for (size_t b = 0; b < 4; b++) {
+	uint64_t expct[XOSHIRO256SS_WIDTH][SIZE];
+	for (size_t b = 0; b < XOSHIRO256SS_WIDTH; b++) {
 		seed_global_test_rng(seed);
 		for (size_t _ = 0; _ < b + 1; _++)
 			xoshiro256starstar_orig_jump();
@@ -115,7 +109,7 @@ test_filln_aligned_01(void)
 	xoshiro256ss_init(&rng, seed);
 	xoshiro256ss_filln(&rng, buf, SIZE);
 
-	for (size_t b = 0; b < 4; b++) {
+	for (size_t b = 0; b < XOSHIRO256SS_WIDTH; b++) {
 		for (size_t i = 0; i < SIZE; i++) {
 			if (buf[i].s[b] != expct[b][i]) {
 				TEST_FAIL(
@@ -137,6 +131,9 @@ main(int argc, char **argv)
 	test_init();
 	test_zeroinit();
 	test_filln_aligned_01();
+
+	if (TEST_RT == 0)
+		printf("OK\n");
 
 	return TEST_RT;
 }
