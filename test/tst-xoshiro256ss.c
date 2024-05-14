@@ -2,19 +2,19 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "xoshiro256ss.h"
 #include "xoshiro256starstar_orig.h"
 
-static int TEST_RT = 0;
+static _Atomic(int) TEST_RT = 0;
 
-#define TEST_FAIL(...)                                                         \
-	{                                                                      \
+#define TEST_FAIL(...)  do {                                                   \
 		fprintf(stderr, "FAIL %s:%d ", __FILE__, __LINE__);            \
 		fprintf(stderr, __VA_ARGS__);                                  \
 		fprintf(stderr, "\n");                                         \
 		TEST_RT = -1;                                                  \
-	}
+	} while(0)
 
 static uint64_t
 splitmix64(uint64_t *st)
@@ -36,29 +36,28 @@ splitmix64(uint64_t *st)
  *
  */
 static void
-seed_global_test_rng(uint64_t seed)
+seed_orig_rng(uint64_t *s, uint64_t seed)
 {
 	uint64_t smx = seed;
-	uint64_t s[4];
-
 	for (size_t i = 0; i < 4; i++)
 		s[i] = splitmix64(&smx);
-	xoshiro256starstar_orig_set(s);
 }
 
 static void
 test_init(void)
 {
-	const uint64_t seed = UINT64_C(0x100e881);
-	uint64_t       expct[XOSHIRO256SS_WIDTH][4];
+	_Alignas(0x40) struct xoshiro256ss rng;
 
-	seed_global_test_rng(seed);
+	const uint64_t	seed = UINT64_C(0x100e881);
+	uint64_t	s[4];
+	uint64_t	expct[XOSHIRO256SS_WIDTH][4];
+	seed_orig_rng(s, seed);
 	for (size_t i = 0; i < XOSHIRO256SS_WIDTH; i++) {
-		xoshiro256starstar_orig_jump();
-		xoshiro256starstar_orig_get(expct[i]);
+		xoshiro256starstar_orig_jump(s);
+		memcpy(expct[i], s, 8 * 4);
 	}
 
-	struct xoshiro256ss rng;
+
 	int		    rt = xoshiro256ss_init(&rng, seed);
 	if (rt < 0)
 		TEST_FAIL("init() reported error: %d", rt);
@@ -94,7 +93,7 @@ static void
 test_filln_aligned01(void)
 {
 	uint64_t seed = UINT64_C(0x834333c);
-
+	uint64_t s[4];
 #define SIZE UINT64_C(3 * 1024 * 1024)
 	uint64_t *expct = malloc(sizeof *expct * XOSHIRO256SS_WIDTH * SIZE);
 	uint64_t *buf =
@@ -105,11 +104,11 @@ test_filln_aligned01(void)
 	}
 
 	for (size_t b = 0; b < XOSHIRO256SS_WIDTH; b++) {
-		seed_global_test_rng(seed);
+		seed_orig_rng(s, seed);
 		for (size_t _ = 0; _ < b + 1; _++)
-			xoshiro256starstar_orig_jump();
+			xoshiro256starstar_orig_jump(s);
 		for (size_t i = 0; i < SIZE; i++)
-			expct[b * SIZE + i] = xoshiro256starstar_orig_next();
+			expct[b * SIZE + i] = xoshiro256starstar_orig_next(s);
 	}
 
 	_Alignas(0x40) struct xoshiro256ss rng;
@@ -147,7 +146,7 @@ static void
 test_filln_aligned02_f64n(void)
 {
 	uint64_t seed = UINT64_C(0x1e42fffc);
-
+	uint64_t s[4];
 #define SIZE UINT64_C(7 * 1024 * 1024)
 	double *expct = malloc(sizeof *expct * XOSHIRO256SS_WIDTH * SIZE);
 	double *buf =
@@ -158,12 +157,12 @@ test_filln_aligned02_f64n(void)
 	}
 
 	for (size_t b = 0; b < XOSHIRO256SS_WIDTH; b++) {
-		seed_global_test_rng(seed);
+		seed_orig_rng(s, seed);
 		for (size_t _ = 0; _ < b + 1; _++)
-			xoshiro256starstar_orig_jump();
+			xoshiro256starstar_orig_jump(s);
 		for (size_t i = 0; i < SIZE; i++)
 			expct[b * SIZE + i] =
-				to_double(xoshiro256starstar_orig_next());
+				to_double(xoshiro256starstar_orig_next(s));
 	}
 
 	_Alignas(0x40) struct xoshiro256ss rng;

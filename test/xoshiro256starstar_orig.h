@@ -8,10 +8,9 @@
  *   Article 36 (December 2021), 32 pages.
  *   https://doi.org/10.1145/3460772
  *
- * Their implementation uses a static internal state for the PRNG, hence our
- * wrapper in not thead-safe and is used only as a referente for the tests
- * suite.
- *
+ * Their implementation uses a static internal state for the PRNG.
+ * We modify original functions to accept a local state, so that the
+ * implementation is thread-safe.
  */
 
 #ifndef XOSHIRO256STARSTAR_ORIG_H
@@ -19,26 +18,15 @@
 
 #include <stdint.h>
 
-/*
- * Use a pointer to an array of 4 uint64_t to quickly
- * overwrite the state of the PRNG.
- */
-void
-xoshiro256starstar_orig_set(uint64_t *state);
-
-/*
- * Read out the global state. Write in to the 4 element array specified.
- */
-void
-xoshiro256starstar_orig_get(uint64_t *state);
+/* The array s below contains 4 elements. */
 
 uint64_t
-xoshiro256starstar_orig_next(void);
+xoshiro256starstar_orig_next(uint64_t *s);
 
 void
-xoshiro256starstar_orig_jump(void);
+xoshiro256starstar_orig_jump(uint64_t *s);
 
 void
-xoshiro256starstar_orig_long_jump(void);
+xoshiro256starstar_orig_long_jump(uint64_t *s);
 
 #endif // XOSHIRO256STARSTAR_ORIG_H
