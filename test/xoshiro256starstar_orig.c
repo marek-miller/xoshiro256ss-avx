@@ -25,10 +25,8 @@ rotl(const uint64_t x, int k)
 	return (x << k) | (x >> (64 - k));
 }
 
-static uint64_t s[4];
-
-static uint64_t
-next(void)
+uint64_t
+xoshiro256starstar_orig_next(uint64_t *s)
 {
 	const uint64_t result = rotl(s[1] * 5, 7) * 9;
 
@@ -50,8 +48,8 @@ next(void)
    to 2^128 calls to next(); it can be used to generate 2^128
    non-overlapping subsequences for parallel computations. */
 
-static void
-jump(void)
+void
+xoshiro256starstar_orig_jump(uint64_t *s)
 {
 	static const uint64_t JUMP[] = { 0x180ec6d33cfd0aba, 0xd5a61266f0c9392c,
 		0xa9582618e03fc9aa, 0x39abdc4529b1661c };
@@ -68,7 +66,7 @@ jump(void)
 				s2 ^= s[2];
 				s3 ^= s[3];
 			}
-			next();
+			xoshiro256starstar_orig_next(s);
 		}
 
 	s[0] = s0;
@@ -82,8 +80,8 @@ jump(void)
    from each of which jump() will generate 2^64 non-overlapping
    subsequences for parallel distributed computations. */
 
-static void
-long_jump(void)
+void
+xoshiro256starstar_orig_long_jump(uint64_t *s)
 {
 	static const uint64_t LONG_JUMP[] = { 0x76e15d3efefdcbbf,
 		0xc5004e441c522fb3, 0x77710069854ee241, 0x39109bb02acbe635 };
@@ -100,55 +98,11 @@ long_jump(void)
 				s2 ^= s[2];
 				s3 ^= s[3];
 			}
-			next();
+			xoshiro256starstar_orig_next(s);
 		}
 
 	s[0] = s0;
 	s[1] = s1;
 	s[2] = s2;
 	s[3] = s3;
-}
-
-/*****************************************************************************
- *                                                                           *
- *  Wrapper interface for testing.                                           *
- *                                                                           *
- *****************************************************************************/
-
-#include "xoshiro256starstar_orig.h"
-
-void
-xoshiro256starstar_orig_set(uint64_t *state)
-{
-	s[0] = state[0];
-	s[1] = state[1];
-	s[2] = state[2];
-	s[3] = state[3];
-}
-
-void
-xoshiro256starstar_orig_get(uint64_t *state)
-{
-	state[0] = s[0];
-	state[1] = s[1];
-	state[2] = s[2];
-	state[3] = s[3];
-}
-
-uint64_t
-xoshiro256starstar_orig_next(void)
-{
-	return next();
-}
-
-void
-xoshiro256starstar_orig_jump(void)
-{
-	jump();
-}
-
-void
-xoshiro256starstar_orig_long_jump(void)
-{
-	long_jump();
 }

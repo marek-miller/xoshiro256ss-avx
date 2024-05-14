@@ -7,7 +7,7 @@ STALIB		= lib$(PROGRAM).a
 DYNLIB		= lib$(PROGRAM).so
 
 CC		= gcc
-CFLAGS		= -O2 -march=native -Wall -Wextra \
+CFLAGS		= -std=c11 -O2 -march=native -Wall -Wextra \
 			-DXOSHIRO256SS_TECH=$(TECHNOLOGY)
 ASM		= nasm
 ASMFLAGS	= -Ox -felf64 -w+all -w-reloc-rel-dword \
@@ -23,7 +23,7 @@ INC		= .
 
 
 .PHONY: all build debug
-.DEFAULT_GOAL: all
+.DEFAULT_GOAL := all
 
 debug: CFLAGS	+= -DDEBUG -g -Og -Wpedantic
 debug: ASMFLAGS	+= -DDEBUG -g -Fdwarf

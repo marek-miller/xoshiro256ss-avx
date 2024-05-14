@@ -21,9 +21,7 @@
  */
 
 struct xoshiro256ss {
-	_Alignas(64) uint64_t s[4 * XOSHIRO256SS_WIDTH];
-	
-	uint64_t steps;
+	uint64_t s[4 * XOSHIRO256SS_WIDTH];
 };
 
 /* Returns:
@@ -37,14 +35,11 @@ xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed);
 /* 
  * The buffer must be aligned to 64 bytes, 
  * and the length must be multiple of 8.
- * 
- * Returns: 
- *  cumulative number of steps taken by the generator
  */
-uint64_t
+void
 xoshiro256ss_filln(struct xoshiro256ss *rng, uint64_t *buf, size_t n);
 
-uint64_t
+void
 xoshiro256ss_filln_f64n(struct xoshiro256ss *rng, double *buf, size_t n);
 
 /*
