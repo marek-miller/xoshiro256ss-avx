@@ -1,21 +1,21 @@
+#include <stdatomic.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <threads.h>
+#include <unistd.h> /* sysconf */
 
 #include "xoshiro256ss.h"
 #include "xoshiro256starstar_orig.h"
 
-static _Atomic(int) TEST_RT = 0;
-
-#define TEST_FAIL(...)  do {                                                   \
+#define TEST_FAIL(...)                                                         \
+	do {                                                                   \
 		fprintf(stderr, "FAIL %s:%d ", __FILE__, __LINE__);            \
 		fprintf(stderr, __VA_ARGS__);                                  \
 		fprintf(stderr, "\n");                                         \
-		TEST_RT = -1;                                                  \
-	} while(0)
+	} while (0)
 
 static uint64_t
 splitmix64(uint64_t *st)
@@ -44,27 +44,31 @@ seed_orig_rng(uint64_t *s, uint64_t seed)
 		s[i] = splitmix64(&smx);
 }
 
-static void
-test_init(void)
+static int
+test_init(void *p)
 {
+	(void)p;
 	_Alignas(0x40) struct xoshiro256ss rng;
 
-	const uint64_t	seed = UINT64_C(0x100e881);
-	uint64_t	s[4];
-	uint64_t	expct[XOSHIRO256SS_WIDTH][4];
+	const uint64_t seed = UINT64_C(0x100e881);
+	uint64_t       s[4];
+	uint64_t       expct[XOSHIRO256SS_WIDTH][4];
 	seed_orig_rng(s, seed);
 	for (size_t i = 0; i < XOSHIRO256SS_WIDTH; i++) {
 		xoshiro256starstar_orig_jump(s);
 		memcpy(expct[i], s, 8 * 4);
 	}
 
-
 	int rt = xoshiro256ss_init(&rng, seed);
-	if (rt <  0)
+	if (rt < 0) {
 		TEST_FAIL("init() reported error: %d", rt);
-	if (rt != XOSHIRO256SS_TECH)
+		return -1;
+	}
+	if (rt != XOSHIRO256SS_TECH) {
 		TEST_FAIL("init() reported wrong technology: %d (should be %d)",
 			rt, XOSHIRO256SS_TECH);
+		return -1;
+	}
 
 	/* Verify */
 	for (size_t i = 0; i < XOSHIRO256SS_WIDTH; i++) {
@@ -73,27 +77,37 @@ test_init(void)
 				TEST_FAIL(
 					"PRGN init, wrong state at i=%zu, j=%zu",
 					i, j);
-				return;
+				return -1;
 			}
 		}
 	}
+
+	return 0;
 }
 
-static void
-test_zeroinit(void)
+static int
+test_zeroinit(void *p)
 {
+	(void)p;
+
 	_Alignas(0x40) struct xoshiro256ss rng;
 	xoshiro256ss_init(&rng, UINT64_C(0x00));
 	for (size_t i = 0; i < XOSHIRO256SS_WIDTH * 4; i++) {
-		if (rng.s[i] == 0)
+		if (rng.s[i] == 0) {
 			TEST_FAIL("state contains 0x00 at %zu", i);
-			return;
+			return -1;
+		}
 	}
+
+	return 0;
 }
 
-static void
-test_filln_aligned01(void)
+static int
+test_filln_aligned01(void *p)
 {
+	(void)p;
+	int rt = 0;
+
 	uint64_t seed = UINT64_C(0x834333c);
 	uint64_t s[4];
 #define SIZE UINT64_C(3 * 1024 * 1024)
@@ -102,6 +116,7 @@ test_filln_aligned01(void)
 		aligned_alloc(0x40, sizeof *buf * XOSHIRO256SS_WIDTH * SIZE);
 	if (!(expct && buf)) {
 		TEST_FAIL("memory allocation");
+		rt = -1;
 		goto exit;
 	}
 
@@ -124,6 +139,7 @@ test_filln_aligned01(void)
 				TEST_FAIL(
 					"result differs at block %zu, index %zu",
 					b, i);
+				rt = -1;
 				goto exit;
 			}
 		}
@@ -132,6 +148,8 @@ test_filln_aligned01(void)
 exit:
 	free(expct);
 	free(buf);
+
+	return rt;
 }
 
 static inline double
@@ -144,9 +162,12 @@ to_double(uint64_t x)
 	return u.d - 1.0;
 }
 
-static void
-test_filln_aligned02_f64n(void)
+static int
+test_filln_aligned02_f64n(void *p)
 {
+	(void)p;
+	int rt = 0;
+
 	uint64_t seed = UINT64_C(0x1e42fffc);
 	uint64_t s[4];
 #define SIZE UINT64_C(7 * 1024 * 1024)
@@ -155,6 +176,7 @@ test_filln_aligned02_f64n(void)
 		aligned_alloc(0x40, sizeof *buf * XOSHIRO256SS_WIDTH * SIZE);
 	if (!(expct && buf)) {
 		TEST_FAIL("memory allocation");
+		rt = -1;
 		goto exit;
 	}
 
@@ -178,6 +200,7 @@ test_filln_aligned02_f64n(void)
 				TEST_FAIL(
 					"result differs at block %zu, index %zu",
 					b, i);
+				rt = -1;
 				goto exit;
 			}
 		}
@@ -186,69 +209,60 @@ test_filln_aligned02_f64n(void)
 exit:
 	free(expct);
 	free(buf);
+
+	return rt;
 }
 
+/* Test harness */
+#define TEST_THRDS_MAX (64)
+static thrd_t test_thrd[TEST_THRDS_MAX];
+static int    test_thrd_res[TEST_THRDS_MAX];
 
-/* Split tests into a few threads */
+static int (*test_tests[])(void *) = { test_init, test_zeroinit,
+	test_filln_aligned01, test_filln_aligned02_f64n };
+static _Atomic(int) test_top	   = sizeof test_tests / sizeof *test_tests - 1;
 
-#define TEST_THRDS (4)
-static thrd_t test_thrd[TEST_THRDS];
-static int test_thrd_res[TEST_THRDS];
-
-int test_thrd_worker01(void *p) {
+int
+test_thrd_worker(void *p)
+{
 	(void)p;
 
-	test_init();
+	int rt = 0;
 
-	return 0;
+	while (1) {
+		int top = atomic_fetch_sub(&test_top, 1);
+		if (top < 0)
+			return rt;
+		if (test_tests[top](NULL) < 0)
+			rt = -1;
+	}
+
+	__builtin_unreachable();
 }
-
-int test_thrd_worker02(void *p) {
-	(void)p;
-
-	test_zeroinit();
-
-	return 0;
-}
-
-int test_thrd_worker03(void *p) {
-	(void)p;
-
-	test_filln_aligned01();
-
-	return 0;
-}
-
-int test_thrd_worker04(void *p) {
-	(void)p;
-
-	test_filln_aligned02_f64n();
-
-	return 0;
-}
-
-static thrd_start_t test_thrd_worker[TEST_THRDS] = {
-	test_thrd_worker01,
-	test_thrd_worker02,
-	test_thrd_worker03,
-	test_thrd_worker04,
-};
 
 int
 main(int argc, char **argv)
 {
 	(void)argc;
 	(void)argv;
-	
-	for (int i = 0; i < TEST_THRDS; i++) 
-		if (thrd_create(&test_thrd[i], test_thrd_worker[i], NULL) != thrd_success)
+
+	int  rt		   = 0;
+	long num_cpus	   = sysconf(_SC_NPROCESSORS_ONLN);
+	long test_thrd_num = TEST_THRDS_MAX > num_cpus - 1 ? num_cpus - 1 :
+							     TEST_THRDS_MAX;
+	for (int i = 0; i < test_thrd_num; i++)
+		if (thrd_create(&test_thrd[i], test_thrd_worker, NULL) !=
+			thrd_success) {
 			TEST_FAIL("cannot create thread %d", i);
-
-	for (int i = 0; i < TEST_THRDS; i++)
+			rt = -1;
+		}
+	for (int i = 0; i < test_thrd_num; i++) {
 		thrd_join(test_thrd[i], &test_thrd_res[i]);
-
-	if (TEST_RT == 0)
+		if (test_thrd_res[i] < 0)
+			rt = -1;
+	}
+	if (rt == 0)
 		printf("OK\n");
 
-	return TEST_RT;
+	return rt;
 }
