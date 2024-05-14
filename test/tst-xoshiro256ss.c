@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <threads.h>
 
 #include "xoshiro256ss.h"
 #include "xoshiro256starstar_orig.h"
@@ -58,8 +59,8 @@ test_init(void)
 	}
 
 
-	int		    rt = xoshiro256ss_init(&rng, seed);
-	if (rt < 0)
+	int rt = xoshiro256ss_init(&rng, seed);
+	if (rt <  0)
 		TEST_FAIL("init() reported error: %d", rt);
 	if (rt != XOSHIRO256SS_TECH)
 		TEST_FAIL("init() reported wrong technology: %d (should be %d)",
@@ -86,6 +87,7 @@ test_zeroinit(void)
 	for (size_t i = 0; i < XOSHIRO256SS_WIDTH * 4; i++) {
 		if (rng.s[i] == 0)
 			TEST_FAIL("state contains 0x00 at %zu", i);
+			return;
 	}
 }
 
@@ -186,16 +188,64 @@ exit:
 	free(buf);
 }
 
+
+/* Split tests into a few threads */
+
+#define TEST_THRDS (4)
+static thrd_t test_thrd[TEST_THRDS];
+static int test_thrd_res[TEST_THRDS];
+
+int test_thrd_worker01(void *p) {
+	(void)p;
+
+	test_init();
+
+	return 0;
+}
+
+int test_thrd_worker02(void *p) {
+	(void)p;
+
+	test_zeroinit();
+
+	return 0;
+}
+
+int test_thrd_worker03(void *p) {
+	(void)p;
+
+	test_filln_aligned01();
+
+	return 0;
+}
+
+int test_thrd_worker04(void *p) {
+	(void)p;
+
+	test_filln_aligned02_f64n();
+
+	return 0;
+}
+
+static thrd_start_t test_thrd_worker[TEST_THRDS] = {
+	test_thrd_worker01,
+	test_thrd_worker02,
+	test_thrd_worker03,
+	test_thrd_worker04,
+};
+
 int
 main(int argc, char **argv)
 {
 	(void)argc;
 	(void)argv;
+	
+	for (int i = 0; i < TEST_THRDS; i++) 
+		if (thrd_create(&test_thrd[i], test_thrd_worker[i], NULL) != thrd_success)
+			TEST_FAIL("cannot create thread %d", i);
 
-	test_init();
-	test_zeroinit();
-	test_filln_aligned01();
-	test_filln_aligned02_f64n();
+	for (int i = 0; i < TEST_THRDS; i++)
+		thrd_join(test_thrd[i], &test_thrd_res[i]);
 
 	if (TEST_RT == 0)
 		printf("OK\n");
