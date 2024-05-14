@@ -47,6 +47,8 @@ xoshiro256ss_filln(struct xoshiro256ss *rng, uint64_t *buf, size_t n);
 uint64_t
 xoshiro256ss_filln_f64n(struct xoshiro256ss *rng, double *buf, size_t n);
 
+/*
+ * TODO: implement this:
 
 enum {
 	XOSHIRO256SS_JUMP128 = 1,
@@ -55,5 +57,7 @@ enum {
 
 void
 xoshiro256ss_jump(struct xoshiro256ss *rng, int flag);
+
+ */
 
 #endif /* XOSHIRO256SS_H */

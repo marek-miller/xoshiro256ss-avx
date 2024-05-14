@@ -28,7 +28,7 @@ xoshiro256ss_filln_avx2:
 	; constant needed for 
 	; converstion: uint64_t -> double
 	mov	r9, 0x3ff
-	shl	r9, 52
+	shl	r9, 52			; r9 = 1.0
 	push	r9
 	vpbroadcastq ymm12, [rsp]
 	add	rsp, 0x08
