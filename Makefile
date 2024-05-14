@@ -23,7 +23,7 @@ INC		= .
 
 
 .PHONY: all build debug
-.DEFAULT_GOAL: all
+.DEFAULT_GOAL := all
 
 debug: CFLAGS	+= -DDEBUG -g -Og -Wpedantic
 debug: ASMFLAGS	+= -DDEBUG -g -Fdwarf
