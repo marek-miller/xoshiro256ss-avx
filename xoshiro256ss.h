@@ -22,6 +22,8 @@
 
 struct xoshiro256ss {
 	_Alignas(64) uint64_t s[4 * XOSHIRO256SS_WIDTH];
+	
+	uint64_t steps;
 };
 
 /* Returns:
@@ -36,22 +38,22 @@ xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed);
  * The buffer must be aligned to 64 bytes, 
  * and the length must be multiple of 8.
  * 
- * Returns: number of invocations to the parellel PRNG (= n)
+ * Returns: 
+ *  cumulative number of steps taken by the generator
  */
-size_t
+uint64_t
 xoshiro256ss_filln(struct xoshiro256ss *rng, uint64_t *buf, size_t n);
 
-void
-xoshiro256ss_jump128(struct xoshiro256ss *rng);
-
-void
-xoshiro256ss_jump192(struct xoshiro256ss *rng);
-
-
 uint64_t
-xoshiro256ss_splitmix64(uint64_t *st);
+xoshiro256ss_filln_f64n(struct xoshiro256ss *rng, double *buf, size_t n);
 
-double
-xoshiro256ss_u64_to_f64n(uint64_t x);
+
+enum {
+	XOSHIRO256SS_JUMP128 = 1,
+	XOSHIRO256SS_JUMP192 = 2,
+};
+
+void
+xoshiro256ss_jump(struct xoshiro256ss *rng, int flag);
 
 #endif /* XOSHIRO256SS_H */
