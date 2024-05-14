@@ -82,7 +82,7 @@ test_init(void)
 static void
 test_zeroinit(void)
 {
-	struct xoshiro256ss rng;
+	_Alignas(0x40) struct xoshiro256ss rng;
 	xoshiro256ss_init(&rng, UINT64_C(0x00));
 	for (size_t i = 0; i < XOSHIRO256SS_WIDTH * 4; i++) {
 		if (rng.s[i] == 0)
@@ -98,7 +98,7 @@ test_filln_aligned01(void)
 #define SIZE UINT64_C(3 * 1024 * 1024)
 	uint64_t *expct = malloc(sizeof *expct * XOSHIRO256SS_WIDTH * SIZE);
 	uint64_t *buf =
-		aligned_alloc(64, sizeof *buf * XOSHIRO256SS_WIDTH * SIZE);
+		aligned_alloc(0x40, sizeof *buf * XOSHIRO256SS_WIDTH * SIZE);
 	if (!(expct && buf)) {
 		TEST_FAIL("memory allocation");
 		goto exit;
@@ -112,7 +112,7 @@ test_filln_aligned01(void)
 			expct[b * SIZE + i] = xoshiro256starstar_orig_next();
 	}
 
-	struct xoshiro256ss rng;
+	_Alignas(0x40) struct xoshiro256ss rng;
 	xoshiro256ss_init(&rng, seed);
 	xoshiro256ss_filln(&rng, buf, SIZE);
 
@@ -127,10 +127,6 @@ test_filln_aligned01(void)
 			}
 		}
 	}
-	if (rng.steps != SIZE)
-		TEST_FAIL("wrong number of steps reported: %lu (should be %lu",
-			rng.steps, SIZE);
-
 #undef SIZE
 exit:
 	free(expct);
@@ -155,7 +151,7 @@ test_filln_aligned02_f64n(void)
 #define SIZE UINT64_C(7 * 1024 * 1024)
 	double *expct = malloc(sizeof *expct * XOSHIRO256SS_WIDTH * SIZE);
 	double *buf =
-		aligned_alloc(64, sizeof *buf * XOSHIRO256SS_WIDTH * SIZE);
+		aligned_alloc(0x40, sizeof *buf * XOSHIRO256SS_WIDTH * SIZE);
 	if (!(expct && buf)) {
 		TEST_FAIL("memory allocation");
 		goto exit;
@@ -170,7 +166,7 @@ test_filln_aligned02_f64n(void)
 				to_double(xoshiro256starstar_orig_next());
 	}
 
-	struct xoshiro256ss rng;
+	_Alignas(0x40) struct xoshiro256ss rng;
 	xoshiro256ss_init(&rng, seed);
 	xoshiro256ss_filln_f64n(&rng, buf, SIZE);
 
@@ -185,15 +181,6 @@ test_filln_aligned02_f64n(void)
 			}
 		}
 	}
-	if (rng.steps != SIZE)
-		TEST_FAIL("wrong number of steps reported: %lu (should be %lu)",
-			rng.steps, SIZE);
-
-	xoshiro256ss_filln_f64n(&rng, buf, SIZE - 8);
-	if (rng.steps != SIZE + SIZE - 8)
-		TEST_FAIL("wrong number of steps reported: %lu (should be %lu)",
-			rng.steps, SIZE + SIZE - 8);
-
 #undef SIZE
 exit:
 	free(expct);

@@ -73,7 +73,6 @@ xoshiro256ss_init(struct xoshiro256ss *rng, uint64_t seed)
 		for (size_t j = 0; j < 4; j++)
 			rng->s[i + XOSHIRO256SS_WIDTH * j] = st[j];
 	}
-	rng->steps = 0;
 
 	return 1;
 }
@@ -86,7 +85,7 @@ extern void
 xoshiro256ss_filln_avx512(
 	struct xoshiro256ss *rng, void *buf, size_t n, int f64n_conv);
 
-uint64_t
+void
 xoshiro256ss_filln(struct xoshiro256ss *rng, uint64_t *buf, size_t n)
 {
 #if XOSHIRO256SS_TECH == 1
@@ -102,11 +101,9 @@ xoshiro256ss_filln(struct xoshiro256ss *rng, uint64_t *buf, size_t n)
 #error "Wrong technology specifier"
 
 #endif
-
-	return (rng->steps += n);
 }
 
-uint64_t
+void
 xoshiro256ss_filln_f64n(struct xoshiro256ss *rng, double *buf, size_t n)
 {
 #if XOSHIRO256SS_TECH == 1
@@ -122,6 +119,4 @@ xoshiro256ss_filln_f64n(struct xoshiro256ss *rng, double *buf, size_t n)
 #error "Wrong technology specifier"
 
 #endif
-
-	return (rng->steps += n);
 }
